@@ -10,7 +10,7 @@ This is done by turning your own Discord account into a bot -- copied messages a
 
 To setup and run this bot, you must first [install Node.js](https://nodejs.org/en/).
 
-1. Download the [latest release](https://github.com/nxg-org/discord-echobot/archive/refs/heads/master.zip) source code.
+1. Download the [latest release](https://github.com/algj/ryan-echobot/archive/refs/heads/master.zip) source code.
 2. Extract the source code to a folder of your choosing.
 3. Configure the bot by **either**:
     - Creating a file called `config.json` in the extracted directory and filling it out. You can see `config.example.json` for an example. Scroll down to see what each option means.
@@ -22,7 +22,7 @@ To setup and run this bot, you must first [install Node.js](https://nodejs.org/e
 
 ### Heroku
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/NXG-FIVERR/ryan-echobot/tree/master)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/algj/ryan-echobot/tree/master)
 
 This bot is compatible with Heroku. You can use the button above to deploy it quickly. 
 
