@@ -137,7 +137,7 @@ All options are ... well.. optional. Defaults are listed for if you don't includ
   * e.g. ```"minLength": 10```
   * (Default `0`)
 
-* `webhook`: Send messages using webhook, allows sending messages with username and avatar, but there's more rate-limit and it will not edit messages.
+* `webhook`: Send messages using webhook, allows sending messages with username and avatar, but there's more rate-limit.
   * e.g. ```"webhook": true```
   * (Default `false`)
 
