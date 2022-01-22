@@ -186,8 +186,8 @@ readConfig().then(async config => {
     client.on("messageUpdate", (oldMsg, msg)=>{
         for(let { message, options, originalMessage } of msgWatch){
             if(originalMessage.id == msg.id && originalMessage.channel.id == msg.channel.id){
-                if ((options.allowEdit ?? true) && message.editable) {
-                    forwardMessage(msg.channel as SendableChannel, originalMessage, options, message as Discord.Message).catch(error=>{
+                if ((options.allowEdit ?? true)) {
+                    forwardMessage(message.channel as SendableChannel, originalMessage, options, message as Discord.Message).catch(error=>{
                         // oh no, let's better not crash whole discord bot and just catch the error
                         console.error(error);
                     });

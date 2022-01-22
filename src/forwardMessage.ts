@@ -1,6 +1,7 @@
 import * as Discord from 'discord.js';
 import { ConfigOptions, SendableChannel } from './types';
 import { fetchWebhook } from "./webhookManager";
+import fetch from "node-fetch";
 
 export async function forwardMessage(
     channel: SendableChannel,
@@ -98,15 +99,24 @@ export async function forwardMessage(
                     options
                 };
             }else{
-                //@ts-ignore
-                await edit.edit(content, { files, embeds, username: usernameDisplay, avatarURL, allowedMentions });
+                // fuck this old version of discord.js
+                let resp = await fetch(`https://discord.com/api/v9/webhooks/${hook.id}/${hook.token}/messages/${edit.id}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ content, files, embeds, allowedMentions }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+                if(!resp.ok){
+                    console.log(await resp.json());
+                }
                 return { msg: edit, options };
             }
         };
         try{
             return await sendHook();
         }catch(e){
-            console.error("Failed to "+(edit?"edit":"send")+" hook message! Retrying in 15 seconds.");
+            console.error("Failed to "+(edit?"edit":"send")+" hook message! Retrying in 15 seconds.", e);
             await sleep(15000);
             try{
                 return await sendHook();
