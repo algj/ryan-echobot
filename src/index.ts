@@ -134,8 +134,8 @@ readConfig().then(async (config: {
                             msg.hash = getHash(rmsg);
                             if(msg.hash!=oldHash){
                                 client.emit("messageUpdate", msg.originalMessage, rmsg);
+                                await sleep(1250);
                             }
-                            await sleep(250);
                         }
                     }
                 }
@@ -243,6 +243,7 @@ readConfig().then(async (config: {
                         rmsg.message = new Discord.Message(client, rmsg.message as any, client.channels.cache.get((rmsg.message as any).channelID) as Discord.TextChannel);
                     }
                     // rmsg.message = await rmsg.message.fetch();
+                    rmsg.hash = getHash(msg as Discord.Message);
                     forwardMessage(rmsg.message.channel as SendableChannel, rmsg.originalMessage, rmsg.options, rmsg.message).catch(error=>{
                         // oh no, let's better not crash whole discord bot and just catch the error
                         console.error(error);
