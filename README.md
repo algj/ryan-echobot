@@ -160,6 +160,10 @@ All options are ... well.. optional. Defaults are listed for if you don't includ
 * `allowEdit`: Automatically edit bot messages when original message was edited.
   * e.g. ```"allowEdit": false```
   * (Default `true`)
+
+* `editTrackingMaxMsg`: How many messages in a channel to keep track of for editing.
+  * e.g. ```"editTrackingMaxMsg": 50```
+  * (Default `250`)
   
 * `allowDelete`: Automatically delete bot messages when original message was deleted.
   * e.g. ```"allowDelete": true```

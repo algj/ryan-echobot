@@ -239,7 +239,7 @@ readConfig().then(async (config: {
             if(rmsg.originalMessage.id == msg.id){
                 if ((rmsg.options.allowEdit ?? true)) {
                     rmsg.originalMessage = await msg.fetch();
-                    if(rmsg.message.edit==undefined){
+                    if(rmsg.message.edit == undefined){ // smh
                         rmsg.message = new Discord.Message(client, rmsg.message as any, client.channels.cache.get((rmsg.message as any).channelID) as Discord.TextChannel);
                     }
                     // rmsg.message = await rmsg.message.fetch();
