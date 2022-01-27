@@ -131,14 +131,14 @@ export async function forwardMessage(
         }
     }
 
-    if(!edit){
+    if(edit){
+        await edit.edit(content, { files, embed: embeds[0] });
+        return { msg:edit, options };
+    }else{
         return {
             msg: await channel.send(content, { files, embed: embeds[0], allowedMentions }),
             options
         };
-    }else{
-        await edit.edit(content, { files, embed: embeds[0] });
-        return { msg:edit, options };
     }
 }
 

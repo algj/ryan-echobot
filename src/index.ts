@@ -3,10 +3,24 @@ import { readConfig } from "./readConfig";
 import { ConfigOptions, SendableChannel } from "./types";
 import { startWebServer } from "./webServer";
 import { forwardMessage } from "./forwardMessage";
+import { createHash } from "crypto";
+import Database from "./db.js";
 
 startWebServer();
 
-readConfig().then(async config => {
+let db = Database("./db.json") as {
+    msgWatch: { message: Discord.Message, originalMessage: Discord.Message, options: ConfigOptions, hash: string }[]
+};
+db.msgWatch??=[];
+
+readConfig().then(async (config: {
+    token: string
+    redirects: {
+        sources: string[]
+        destinations: string[]
+        options: ConfigOptions
+    }[]
+}) => {
 
     // load Discord.js client
     let client = new Discord.Client({
@@ -91,8 +105,44 @@ readConfig().then(async config => {
         console.log("Channels loaded");
     });
 
-    // watch messages for edits and deletions
-    let msgWatch: { message: Discord.Message, originalMessage: Discord.Message, options: ConfigOptions }[] = []; 
+    let sleep = (ms: number)=>new Promise(res=>setTimeout(res,ms));
+    function getHash(msg: Discord.Message){
+        let all = msg.author.username+msg.author.discriminator+msg.author.displayAvatarURL+msg.content+": "+msg.embeds.map(embed=>embed.toJSON()).join(",");
+        return createHash("md5").update(all).digest("hex");
+    }
+    client.on("ready",()=>setTimeout(async ()=>{
+        while(true){
+            await sleep(1000);
+            for(let redirect of config.redirects){
+                for(let source of redirect.sources){
+                    let ch = client.channels.cache.get(source) as Discord.DMChannel;
+                    let msgs = [...Array.from((await ch.messages.fetch()).values()).map(i=>i)];
+                    if(msgs.length>=50){
+                        while(msgs.length<(redirect.options.editTrackingMaxMsg??250)){
+                            let prevLen = msgs.length;
+                            msgs.push(...Array.from((await ch.messages.fetch({
+                                before: msgs[msgs.length-1].id
+                            })).values()));
+                            if(prevLen==msgs.length) break;
+                        }
+                    }
+                    for(let rmsg of msgs){
+                        for(let msg of db.msgWatch){
+                            if(msg.originalMessage.id!=rmsg.id)continue;
+                            let update = false;
+                            let oldHash = msg.hash;
+                            msg.hash = getHash(rmsg);
+                            if(msg.hash!=oldHash){
+                                client.emit("messageUpdate", msg.originalMessage, rmsg);
+                            }
+                            await sleep(250);
+                        }
+                    }
+                }
+            }
+        }
+    },2000));
+
     client.on("message", async message => {
         // wait while channels are still loading
         await channelLoadPromise;
@@ -151,7 +201,7 @@ readConfig().then(async config => {
             if (!whitelisted) continue;
             promisesMsgs.push({
                 promise: forwardMessage(destinationChannel, message, options, false),
-                originalMessage: message as Discord.Message
+                originalMessage: message
             });
         }
         
@@ -164,9 +214,9 @@ readConfig().then(async config => {
             let { msg, options } = promiseAnswer;
             if ((options.allowEdit ?? true) || options.allowDelete) {
                 // add to edit events
-                msgWatch.push({ message: msg, originalMessage, options });
-                if(msgWatch.length>1000){
-                    msgWatch.shift();
+                db.msgWatch.push({ message: msg, originalMessage, options, hash: getHash(originalMessage) });
+                if(db.msgWatch.length>(options.editTrackingMaxMsg??250)){
+                    db.msgWatch.shift();
                 }
             }
         }
@@ -174,20 +224,26 @@ readConfig().then(async config => {
     });
 
     client.on("messageDelete", msg=>{
-        for(let { message, options, originalMessage } of msgWatch){
+        for(let { message, options, originalMessage } of db.msgWatch){
             if(originalMessage.id == msg.id && originalMessage.channel.id == msg.channel.id){
                 if(options.allowDelete && message.deletable){
+                    db.msgWatch = db.msgWatch.filter(m=>m.originalMessage.id!=msg.id);
                     message.delete().catch(error=>{});
                 }
             }
         }
     });
 
-    client.on("messageUpdate", (oldMsg, msg)=>{
-        for(let { message, options, originalMessage } of msgWatch){
-            if(originalMessage.id == msg.id && originalMessage.channel.id == msg.channel.id){
-                if ((options.allowEdit ?? true)) {
-                    forwardMessage(message.channel as SendableChannel, originalMessage, options, message as Discord.Message).catch(error=>{
+    client.on("messageUpdate", async (oldMsg, msg)=>{
+        for(let rmsg of db.msgWatch){
+            if(rmsg.originalMessage.id == msg.id){
+                if ((rmsg.options.allowEdit ?? true)) {
+                    rmsg.originalMessage = await msg.fetch();
+                    if(rmsg.message.edit==undefined){
+                        rmsg.message = new Discord.Message(client, rmsg.message as any, client.channels.cache.get((rmsg.message as any).channelID) as Discord.TextChannel);
+                    }
+                    // rmsg.message = await rmsg.message.fetch();
+                    forwardMessage(rmsg.message.channel as SendableChannel, rmsg.originalMessage, rmsg.options, rmsg.message).catch(error=>{
                         // oh no, let's better not crash whole discord bot and just catch the error
                         console.error(error);
                     });

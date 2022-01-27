@@ -10,3 +10,4 @@ npm-debug.log
 *.ipr
 *.iws
 yarn.lock
+db.json

@@ -26,6 +26,8 @@ export type ConfigOptions = {
     allowEdit?: boolean
     allowDelete?: boolean
 
+    editTrackingMaxMsg?: number
+
     copyEmbed?: boolean
     copyAttachments?: boolean
     minLength?: number
